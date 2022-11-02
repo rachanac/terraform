@@ -1,0 +1,32 @@
+#Create vpc
+
+locals {
+    pub_stack            = "web"
+    pub_stack2           = "newapp"
+    pvt_stack            = "db"
+    vpc_cidr             = "10.0.0.0/20"
+    public_subnet1_cidr  = "10.0.0.0/24"
+    public_subnet2_cidr  = "10.0.1.0/24"
+    public_subnet3_cidr  = "10.0.2.0/24"
+    private_subnet1_cidr = "10.0.8.0/24"
+    private_subnet2_cidr = "10.0.9.0/24"
+    s3-flowlog-bucket-name = "vpc-flowlogs-${var.envt}-${var.client}"
+
+}
+module "vpc" {
+    source                = "../modules/vpc"
+    region                = var.region
+    client                = var.client
+    envt                  = var.envt
+    pub_stack             = local.pub_stack
+    pub_stack2            = local.pub_stack2
+    pvt_stack             = local.pvt_stack
+    vpc_cidr              = local.vpc_cidr
+    public_subnet1_cidr   = local.public_subnet1_cidr
+    public_subnet2_cidr   = local.public_subnet2_cidr
+    public_subnet3_cidr   = local.public_subnet3_cidr
+    private_subnet1_cidr  = local.private_subnet1_cidr
+    private_subnet2_cidr  = local.private_subnet2_cidr
+    s3-flowlog-bucket-name = local.s3-flowlog-bucket-name
+
+}

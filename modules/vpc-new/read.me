@@ -1,0 +1,47 @@
+-------------Usage to call vpc module
+
+
+#Create vpc
+
+locals {
+    vpc_cidr             = "10.0.0.0/20"
+    N                    = "1"
+    s3-flowlog-bucket-name = "vpc-flowlogs-${var.envt}-${var.client}"
+    #-------------public subnet details----------# 
+    pub_subnet_list      = [
+        {
+           name          =  "public_subnet_web1"
+           cidr_block    = "10.0.0.0/24"
+        },
+        {
+           name          = "public_subnet_web2"
+           cidr_block    = "10.0.1.0/24"
+        },
+    ]
+    #-------------private subnet details----------# 
+    pvt_subnet_list      = [
+        {
+           name           = "private_subnet_db1"
+           cidr_block    = "10.0.8.0/24"
+        },
+        {
+           name           = "private_subnet_db2"
+           cidr_block    = "10.0.9.0/24"
+        },
+  
+    ]
+
+}
+module "vpc" {
+    source                = "../modules/vpc-new"
+    region                = var.region
+    client                = var.client
+    envt                  = var.envt
+    N                     = local.N
+    vpc_cidr              = local.vpc_cidr
+    pub_subnet_list       = local.pub_subnet_list
+    pvt_subnet_list       = local.pvt_subnet_list
+    s3-flowlog-bucket-name = local.s3-flowlog-bucket-name
+
+}
+---------------
