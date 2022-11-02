@@ -1,0 +1,33 @@
+
+Example File calling vpv-peering-auso module
+--------
+ 
+
+locals {
+  prefix                = "vpc_peering_to"
+  #---------Management account details
+  mgmt_region           = "us-west-2"
+  management_profile    = "default"
+  management_vpc_id     = module.mgt_vpc.vpc_id
+  bastion_routetable_id = module.mgt_vpc.public_rtb
+  #--------Production account details
+  production_region = "us-west-2"
+  production_profile = "production"
+  production_vpc_id  = "vpc-xxx6ee"
+}
+
+
+module "vpc_peering_production_account" {
+  source                 = "../../../tf-modules/vpc-peering-auto"
+  prefix                 = local.prefix
+  mgmt_region            = local.mgmt_region
+  management_profile     = local.management_profile
+  management_vpc_id      = local.management_vpc_id
+  bastion_routetable_id  = local.bastion_routetable_id
+  accepter_region        = local.production_region
+  accepter_profile       = local.production_profile
+  accepter_vpc_id        = local.production_vpc_id
+
+}
+
+-----------

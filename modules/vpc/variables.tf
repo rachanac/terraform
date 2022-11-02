@@ -1,38 +1,40 @@
 
 variable "region" {
+     type = string
 }
 
 variable "client" {
+     type = string
 }
 
 variable "envt" { 
+     type = string
 }
 
 
-variable "pub_stack" { 
-}
-variable "pub_stack2" { 
-} 
-
-variable "pvt_stack" { 
+variable  "N"  {
+    type = string
 }
 
 variable "vpc_cidr" {
+     type = string
 }
 
-variable "public_subnet1_cidr" {
-}
+variable "pub_subnet_list"{
+     type = list(object({
+      name = string
+      cidr_block     = string
+    }))
 
-variable "public_subnet2_cidr" {
-}
-variable "public_subnet3_cidr" {
-}
+ }
 
-variable "private_subnet1_cidr" {
-}
+variable "pvt_subnet_list"{
+     type = list(object({
+      name = string
+      cidr_block     = string
+    }))
 
-variable "private_subnet2_cidr" {
-}
+ }
 
 variable "s3-flowlog-bucket-name" {
 }

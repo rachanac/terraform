@@ -1,130 +1,83 @@
 
-# Create vpc
+#-----------Create vpc
 resource "aws_vpc" "vpc" {
   cidr_block           = var.vpc_cidr
   enable_dns_hostnames = true
   enable_dns_support   = true
   tags = {
-    Name = "vpc-${var.client}-${var.envt}-${var.region}"
+    Name = "vpc${var.N}-${var.client}-${var.envt}-${var.region}"
     env = var.envt
   }
 }
 
-# use data source to get all avalablility zones in region
+#------------Use data source to get all avalablility zones in region
 data "aws_availability_zones" "available_zones" {}
 
-
-#Create internet gateway and attach it to vpc
+#------------Create internet gateway and attach it to vpc
 resource "aws_internet_gateway" "igw" {
   vpc_id    = aws_vpc.vpc.id
   tags      = {
-    Name    = "igw-${var.client}-${var.envt}-${var.region}"
+    Name    = "igw${var.N}-${var.client}-${var.envt}-${var.region}"
     env = var.envt
   }
 }
 
 ########################################
-# Create public subnet az1
-resource "aws_subnet" "public_subnet1" {
+#----------------Create public subnet az1
+resource "aws_subnet" "public_subnet" {
+  count = length(var.pub_subnet_list)
   vpc_id                  = aws_vpc.vpc.id
-  cidr_block              = var.public_subnet1_cidr
-  availability_zone       = data.aws_availability_zones.available_zones.names[0]
+  cidr_block              = var.pub_subnet_list[count.index].cidr_block
+  availability_zone       = data.aws_availability_zones.available_zones.names[count.index]
   map_public_ip_on_launch = true
 
   tags      = {
-    Name    = "public_subnet1-${var.client}-${var.envt}-${var.pub_stack}-${var.region}"
+    Name    = "${var.pub_subnet_list[count.index].name}-${var.client}-${var.envt}-${var.region}"
     env = var.envt
   }
 }
 
-# Create public subnet az2
-resource "aws_subnet" "public_subnet2" {
-  vpc_id                  = aws_vpc.vpc.id
-  cidr_block              = var.public_subnet2_cidr
-  availability_zone       = data.aws_availability_zones.available_zones.names[1]
-  map_public_ip_on_launch = true
-
-  tags      = {
-    Name    = "public_subnet2-${var.client}-${var.envt}-${var.pub_stack}-${var.region}"
-    env = var.envt
-  }
-}
-
-# Create public subnet az3
-resource "aws_subnet" "public_subnet3" {
-  vpc_id                  = aws_vpc.vpc.id
-  cidr_block              = var.public_subnet3_cidr
-  availability_zone       = data.aws_availability_zones.available_zones.names[2]
-  map_public_ip_on_launch = true
-
-  tags      = {
-    Name    = "public_subnet2-${var.client}-${var.envt}-${var.pub_stack2}-${var.region}"
-    env = var.envt
-    }
-}
-
-# Create route table and add public route and associate rtbs
+#----------Create route table and add public route and associate rtbs
 resource "aws_route_table" "public_rtb" {
   vpc_id       = aws_vpc.vpc.id
   tags       = {
-    Name     = "public_rtb-${var.client}-${var.envt}-${var.region}"
+    Name     = "public_rtb${var.N}-${var.client}-${var.envt}-${var.region}"
     env = var.envt
     }
 }
+#------------Add route for igw to route table 
 resource "aws_route" "public_igw_route" {
   route_table_id         = aws_route_table.public_rtb.id
   destination_cidr_block = "0.0.0.0/0"
   gateway_id             = aws_internet_gateway.igw.id
 }
 
-#Associate public subnet az1 to "public route table"
-resource "aws_route_table_association" "public_subnet1_rtb_association" {
-  subnet_id           = aws_subnet.public_subnet1.id
+#------------Associate public subnet to "public route table"
+resource "aws_route_table_association" "public_subnet_rtb_association" {
+  count = length(var.pub_subnet_list)
+  subnet_id           = aws_subnet.public_subnet[count.index].id
   route_table_id      = aws_route_table.public_rtb.id
 }
-
-#Associate public subnet az2 to "public route table"
-resource "aws_route_table_association" "public_subnet2_rtb_association" {
-  subnet_id           = aws_subnet.public_subnet2.id
-  route_table_id      = aws_route_table.public_rtb.id
-}
-
-#Associate public subnet az3 to "public route table"
-resource "aws_route_table_association" "public_subnet3_rtb_association" {
-  subnet_id           = aws_subnet.public_subnet3.id
-  route_table_id      = aws_route_table.public_rtb.id
-}
+ 
+ 
 ########################################
 
-# Create  private  subnet az1
-resource "aws_subnet" "private_subnet1" {
+#-----------Create  private  subnet  
+resource "aws_subnet" "private_subnet" {
+  count = length(var.pvt_subnet_list)
   vpc_id                   = aws_vpc.vpc.id
-  cidr_block               = var.private_subnet1_cidr
-  availability_zone        = data.aws_availability_zones.available_zones.names[0]
+  cidr_block               = var.pvt_subnet_list[count.index].cidr_block
+  availability_zone        = data.aws_availability_zones.available_zones.names[count.index]
   map_public_ip_on_launch  = false
 
   tags      = {
-    Name    = "private_subnet1-${var.client}-${var.envt}-${var.pvt_stack}-${var.region}"
-    env = var.envt
-    }
-}
-
-# create private  subnet az2
-
-resource "aws_subnet" "private_subnet2" {
-  vpc_id                   = aws_vpc.vpc.id
-  cidr_block               = var.private_subnet2_cidr
-  availability_zone        = data.aws_availability_zones.available_zones.names[1]
-  map_public_ip_on_launch  = false
-
-  tags      = {
-    Name    = "private_subnet2-${var.client}-${var.envt}-${var.pvt_stack}-${var.region}"
+    Name    = "${var.pvt_subnet_list[count.index].name}-${var.client}-${var.envt}-${var.region}"
     env = var.envt
     }
 }
  
-#Code for enabling NAT gateway 
-
+ 
+#-----------Code for enabling NAT gateway 
 resource "aws_eip" "ngw_eip" {
   vpc        = true
   depends_on = [aws_internet_gateway.igw]
@@ -132,19 +85,19 @@ resource "aws_eip" "ngw_eip" {
 
 resource "aws_nat_gateway" "ngw" {
   allocation_id = aws_eip.ngw_eip.id
-  subnet_id     = aws_subnet.public_subnet1.id
+  subnet_id     = aws_subnet.public_subnet[0].id
   depends_on    = [aws_internet_gateway.igw]
   tags = {
-    Name = "nat-${var.client}-${var.envt}-${var.region}"
+    Name = "nat${var.N}-${var.client}-${var.envt}-${var.region}"
     env = var.envt
     }
 }
 
-#Routing table for private subnet 
+#-----------Route table for private subnet 
 resource "aws_route_table" "private_rtb" {
   vpc_id = aws_vpc.vpc.id
   tags = {
-    Name = "private_rtb-${var.client}-${var.envt}-${var.region}"
+    Name = "private_rtb${var.N}-${var.client}-${var.envt}-${var.region}"
     env = var.envt
     }
 }
@@ -155,14 +108,12 @@ resource "aws_route" "private_ngw_route" {
   nat_gateway_id         = aws_nat_gateway.ngw.id
 }
 
-resource "aws_route_table_association" "private_subnet1_rtb_association" {
-  subnet_id      = aws_subnet.private_subnet1.id
+resource "aws_route_table_association" "private_subnet_rtb_association" {
+  count = length(var.pvt_subnet_list)
+  subnet_id      = aws_subnet.private_subnet[count.index].id
   route_table_id = aws_route_table.private_rtb.id
 }
-resource "aws_route_table_association" "private_subnet2_rtb_association" {
-  subnet_id      = aws_subnet.private_subnet2.id
-  route_table_id = aws_route_table.private_rtb.id
-}
+
 
 #############
 resource "aws_s3_bucket" "flowlogs" {
