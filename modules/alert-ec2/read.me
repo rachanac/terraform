@@ -1,0 +1,52 @@
+A sample file for creating sns topic and EC2 alerts
+---------------------
+locals {
+  sns_topic_name       = "Test_sns_rkc"       (update)
+  region          = "us-east-1"               (update)
+  prefix          = "client_envt_application" (update)
+}
+
+module "create_sns_topic" {
+  source          = "../../tf-modules/sns"
+  sns_topic_name       = local.sns_topic_name
+  subscriptions   = [
+    {
+      protocol = "email"                                                  (update)
+      endpoint = "registrarcorp1@network-redux.incidents.squadcast.com"   (update)
+    }
+  ] 
+}
+
+module "create_alarm_ec2" {
+  source           = "../../tf-modules/alert-ec2"
+  region           = local.region
+  prefix           = local.prefix
+  sns_arn          = module.create_sns_topic.sns_arn
+  instance_id      = "<<>>"
+  instance_devices =   [
+    {
+        device    = "xvda1"  (update)
+        path      = "/"      (update)
+        fstype    = "ext4"   (update)
+    },
+    {
+        device    = "xvdf1"   (update)
+        path      = "/data"   (update)
+        fstype    = "ext4"     (update)
+    }, 
+  ]
+ 
+}
+---------------------------
+RDS instance
+--------------
+
+module "create_alarm_rds" {
+  source           = "../../tf-modules/alert-rds"
+  region           = local.region
+  prefix           = local.prefix
+  sns_arn          = module.create_sns_topic.sns_arn
+  db_identifier    = "database-1"   
+}
+
+---------------------------
